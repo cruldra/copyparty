@@ -1,0 +1,265 @@
+# CopyParty 安装指南
+
+CopyParty 是一个便携式文件服务器，支持断点续传上传、去重、WebDAV、FTP、零配置、媒体索引、视频缩略图、音频转码和只写文件夹等功能。
+
+## 系统要求
+
+- **Python**: 3.3 或更高版本（推荐 3.8+）
+- **操作系统**: Windows、Linux、macOS、FreeBSD、Android、iOS
+- **内存**: 最低 512MB RAM（推荐 1GB+）
+- **存储**: 最低 50MB 可用空间
+
+## 快速安装
+
+### 方法 1: 自解压文件（推荐）
+
+下载并运行自解压文件，这是最简单的方式：
+
+```bash
+# 下载完整版本
+wget https://github.com/9001/copyparty/releases/latest/download/copyparty-sfx.py
+python3 copyparty-sfx.py
+
+# 或下载英文版本（更小）
+wget https://github.com/9001/copyparty/releases/latest/download/copyparty-en.py
+python3 copyparty-en.py
+```
+
+### 方法 2: 通过 PyPI 安装
+
+```bash
+# 使用 pip 安装
+python3 -m pip install --user -U copyparty
+
+# 使用 uv 安装（如果已安装 uv）
+uv tool run copyparty
+```
+
+### 方法 3: 通过包管理器安装
+
+#### Arch Linux
+```bash
+pacman -S copyparty
+```
+
+#### Homebrew (macOS)
+```bash
+brew install copyparty ffmpeg
+```
+
+#### Nix
+```bash
+nix profile install github:9001/copyparty
+```
+
+### 方法 4: Windows 可执行文件
+
+如果无法安装 Python，可以下载预编译的可执行文件：
+
+- [copyparty.exe](https://github.com/9001/copyparty/releases/latest/download/copyparty.exe) (Windows 8+)
+- [copyparty32.exe](https://github.com/9001/copyparty/releases/latest/download/copyparty32.exe) (Windows 7+)
+
+### 方法 5: Docker 容器
+
+```bash
+# 运行基础版本
+docker run --rm -it -u 1000 -p 3923:3923 -v /your/data:/w copyparty/ac
+
+# 使用 docker-compose
+wget https://raw.githubusercontent.com/9001/copyparty/hovudstraum/docs/examples/docker/basic-docker-compose/docker-compose.yml
+docker-compose up
+```
+
+## 可选依赖安装
+
+安装这些依赖可以启用额外功能：
+
+### 缩略图支持
+
+#### Linux (Debian/Ubuntu)
+```bash
+apt install --no-install-recommends python3-pil ffmpeg
+```
+
+#### Linux (Fedora)
+```bash
+dnf install python3-pillow ffmpeg --allowerasing
+```
+
+#### Linux (Alpine)
+```bash
+apk add py3-pillow ffmpeg
+```
+
+#### macOS
+```bash
+# 使用 MacPorts
+port install py-Pillow ffmpeg
+
+# 或使用 Homebrew
+brew install pillow ffmpeg
+```
+
+#### Windows
+```bash
+python -m pip install --user -U Pillow
+```
+
+对于 Windows 上的 FFmpeg：
+1. 下载 [FFmpeg 构建版本](https://www.gyan.dev/ffmpeg/builds/ffmpeg-git-full.7z)
+2. 解压并将 `ffmpeg.exe` 和 `ffprobe.exe` 复制到 `C:\Windows\System32` 或 PATH 中的其他文件夹
+
+### 高级功能依赖
+
+```bash
+# 密码哈希
+python3 -m pip install --user -U argon2-cffi
+
+# FTP 服务器
+python3 -m pip install --user -U pyftpdlib
+
+# FTP 服务器 + TLS
+python3 -m pip install --user -U pyftpdlib pyopenssl
+
+# TFTP 服务器
+python3 -m pip install --user -U "partftpy>=0.4.0"
+
+# 音频标签
+python3 -m pip install --user -U mutagen
+
+# ZeroMQ 消息
+python3 -m pip install --user -U pyzmq
+
+# 高质量缩略图（比 Pillow 快 3.2 倍）
+sudo apt install libvips42  # Linux
+python3 -m pip install --user -U pyvips
+
+# SMB 支持（不推荐）
+python3 -m pip install --user -U "impacket==0.12.0"
+
+# 文件类型检测
+python3 -m pip install --user -U python-magic
+# Windows 用户使用：
+python3 -m pip install --user -U python-magic-bin
+```
+
+### 一键安装所有依赖
+
+```bash
+python3 -m pip install --user -U "copyparty[all]"
+```
+
+## 移动设备安装
+
+### Android (Termux)
+
+1. 安装 [Termux](https://termux.com/) 和 `Termux:API`
+2. 在 Termux 中运行：
+
+```bash
+yes | pkg upgrade && termux-setup-storage && yes | pkg install python termux-api && python -m ensurepip && python -m pip install --user -U copyparty && { grep -qE 'PATH=.*\.local/bin' ~/.bashrc 2>/dev/null || { echo 'PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc && . ~/.bashrc; }; }
+```
+
+可选安装缩略图支持：
+```bash
+pkg install ffmpeg && python3 -m pip install --user -U pillow
+```
+
+### iOS (a-Shell)
+
+1. 安装 [a-Shell](https://apps.apple.com/us/app/a-shell/id1473805438) 或 [a-Shell mini](https://apps.apple.com/us/app/a-shell-mini/id1543537943)
+2. 在 a-Shell 中运行：
+
+```bash
+pip install copyparty
+```
+
+## 验证安装
+
+安装完成后，运行以下命令验证：
+
+```bash
+copyparty --version
+```
+
+或者直接启动服务器：
+
+```bash
+copyparty
+```
+
+默认情况下，服务器将在 `http://localhost:3923` 启动。
+
+## 基本配置
+
+### 简单启动
+
+```bash
+# 共享当前目录（读写权限）
+copyparty
+
+# 共享指定目录
+copyparty /path/to/share
+
+# 指定端口
+copyparty -p 8080
+
+# 只读模式
+copyparty -v /path/to/share:/share:r
+```
+
+### 用户认证
+
+```bash
+# 创建用户账户
+copyparty -a username:password -v /path/to/share:/share:rw,username
+```
+
+### 启用功能
+
+```bash
+# 启用文件索引
+copyparty -e2dsa
+
+# 启用音频元数据索引
+copyparty -e2ts
+
+# 生成二维码（移动设备访问）
+copyparty --qr
+```
+
+## 故障排除
+
+### 常见问题
+
+1. **端口被占用**
+   ```bash
+   copyparty -p 8080  # 使用其他端口
+   ```
+
+2. **缩略图不工作**
+   - 确保已安装 Pillow 或 FFmpeg
+   - 检查文件权限
+
+3. **无法访问服务器**
+   - 检查防火墙设置
+   - 确认端口未被阻止
+
+### 日志调试
+
+```bash
+# 启用详细日志
+copyparty -v /path/to/share:/share:r --log-level debug
+```
+
+## 更多信息
+
+- [项目主页](https://github.com/9001/copyparty)
+- [完整文档](README.md)
+- [配置示例](docs/example.conf)
+- [Docker 部署](scripts/docker/README.md)
+- [问题报告](https://github.com/9001/copyparty/issues)
+
+## 许可证
+
+MIT License - 详见 [LICENSE](LICENSE) 文件。
