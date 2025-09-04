@@ -112,6 +112,7 @@ class EnvParams(object):
         self.t0 = time.time()
         self.mod = ""
         self.cfg = ""
+        self.scfg = True
 
 
 E = EnvParams()

@@ -3037,10 +3037,12 @@ function up2k_init(subtle) {
         if (anymod(e))
             return;
 
-        if (e.code == 'ArrowUp')
+        var k = e.key || e.code;
+
+        if (k == 'ArrowUp')
             bumpthread(1);
 
-        if (e.code == 'ArrowDown')
+        if (k == 'ArrowDown')
             bumpthread(-1);
     }
 
@@ -3103,7 +3105,8 @@ function up2k_init(subtle) {
     ebi('u2szg').addEventListener('blur', read_u2sz);
     ebi('u2szg').onkeydown = function (e) {
         if (anymod(e)) return;
-        var n = e.code == 'ArrowUp' ? 1 : e.code == 'ArrowDown' ? -1 : 0;
+        var k = e.key || e.code,
+            n = k == 'ArrowUp' ? 1 : k == 'ArrowDown' ? -1 : 0;
         if (!n) return;
         this.value = parseInt(this.value) + n;
         read_u2sz();
@@ -3180,7 +3183,8 @@ function up2k_init(subtle) {
 
     function kd_life(e) {
         var el = e.target,
-            d = e.code == 'ArrowUp' ? 1 : e.code == 'ArrowDown' ? -1 : 0;
+            k = e.key || e.code,
+            d = k == 'ArrowUp' ? 1 : k == 'ArrowDown' ? -1 : 0;
 
         if (anymod(e) || !d)
             return;

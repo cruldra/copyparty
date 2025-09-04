@@ -976,6 +976,24 @@ class SvcHub(object):
                     t = "WARNING:\nDisabling WebDAV support because dxml selftest failed. Please report this bug;\n%s\n...and include the following information in the bug-report:\n%s | expat %s\n"
                     self.log("root", t % (URL_BUG, VERSIONS, expat_ver()), 1)
 
+        if not E.scfg and not al.unsafe_state and not os.getenv("PRTY_UNSAFE_STATE"):
+            t = "because runtime config is currently being stored in an untrusted emergency-fallback location. Please fix your environment so either XDG_CONFIG_HOME or ~/.config can be used instead, or disable this safeguard with --unsafe-state or env-var PRTY_UNSAFE_STATE=1."
+            if not al.no_ses:
+                al.no_ses = True
+                t2 = "A consequence of this misconfiguration is that passwords will now be sent in the HTTP-header of every request!"
+                self.log("root", "WARNING:\nWill disable sessions %s %s" % (t, t2), 1)
+            if al.idp_store == 1:
+                al.idp_store = 0
+                self.log("root", "WARNING:\nDisabling --idp-store %s" % (t,), 3)
+            if al.idp_store:
+                t2 = "ERROR: Cannot enable --idp-store %s" % (t,)
+                self.log("root", t2, 1)
+                raise Exception(t2)
+            if al.shr:
+                t2 = "ERROR: Cannot enable shares %s" % (t,)
+                self.log("root", t2, 1)
+                raise Exception(t2)
+
     def _process_config(self) -> bool:
         al = self.args
 

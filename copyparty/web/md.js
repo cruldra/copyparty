@@ -217,7 +217,7 @@ function convert_markdown(md_text, dest_dom) {
     catch (ex) {
         if (IE) {
             dest_dom.innerHTML = 'IE cannot into markdown ;_;';
-            return;
+            return false;
         }
 
         if (ext)
@@ -344,6 +344,8 @@ function convert_markdown(md_text, dest_dom) {
             }
             catch (ex) { }
         }, 1);
+    
+    return true;
 }
 
 

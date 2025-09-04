@@ -1751,7 +1751,11 @@ class AuthSrv(object):
                     files = os.listdir(E.cfg)
                 except:
                     files = []
-                hits = [x for x in files if x.lower().endswith(".conf")]
+                hits = [
+                    x
+                    for x in files
+                    if x.lower().endswith(".conf") and not x.startswith(".")
+                ]
                 if hits:
                     t = "Hint: Found some config files in [%s], but these were not automatically loaded because they are in the wrong place%s %s\n"
                     self.log(t % (E.cfg, ehint, ", ".join(hits)), 3)
@@ -3501,7 +3505,9 @@ def expand_config_file(
 
     if os.path.isdir(fp):
         names = list(sorted(os.listdir(fp)))
-        cnames = [x for x in names if x.lower().endswith(".conf")]
+        cnames = [
+            x for x in names if x.lower().endswith(".conf") and not x.startswith(".")
+        ]
         if not cnames:
             t = "warning: tried to read config-files from folder '%s' but it does not contain any "
             if names:

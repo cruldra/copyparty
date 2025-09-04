@@ -1555,11 +1555,13 @@ html {
 #treepar {
 	z-index: 1;
 	position: fixed;
+	background: #fff;
 	background: var(--tree-bg);
 	left: -.96em;
 	width: calc(.3em + var(--nav-sz) - var(--sbw));
 	border-bottom: 1px solid var(--bg-u5);
 	overflow: hidden;
+	border-right: .5em solid #999\9;
 }
 #treepar.off {
 	display: none;
@@ -1995,6 +1997,7 @@ html.y #doc .line-highlight {
 }
 #seldoc.sel {
 	color: var(--fg2-max);
+	background: #f0f;
 	background: var(--g-sel-b1);
 }
 #pvol,
@@ -2014,6 +2017,7 @@ a.btn,
 	user-select: none;
 }
 #hkhelp {
+	background: #fff;
 	background: var(--bg);
 }
 #hkhelp table {

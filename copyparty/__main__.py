@@ -36,6 +36,7 @@ from .__init__ import (
 )
 from .__version__ import CODENAME, S_BUILD_DT, S_VERSION
 from .authsrv import expand_config_file, split_cfg_ln, upgrade_cfg_fmt
+from .bos import bos
 from .cfg import flagcats, onedash
 from .svchub import SvcHub
 from .util import (
@@ -186,7 +187,7 @@ def init_E(EE: EnvParams) -> None:
 
     E = EE  # pylint: disable=redefined-outer-name
 
-    def get_unixdir() -> str:
+    def get_unixdir() -> tuple[str, bool]:
         paths: list[tuple[Callable[..., Any], str]] = [
             (os.environ.get, "XDG_CONFIG_HOME"),
             (os.path.expanduser, "~/.config"),
@@ -197,6 +198,8 @@ def init_E(EE: EnvParams) -> None:
         ]
         errs = []
         for npath, (pf, pa) in enumerate(paths):
+            priv = npath < 2  # private/trusted location
+            ram = npath > 1  # "nonvolatile"; not semantically same as `not priv`
             p = ""
             try:
                 p = pf(pa)
@@ -206,15 +209,21 @@ def init_E(EE: EnvParams) -> None:
                 p = os.path.normpath(p)
                 mkdir = not os.path.isdir(p)
                 if mkdir:
-                    os.mkdir(p)
+                    os.mkdir(p, 0o700)
 
                 p = os.path.join(p, "copyparty")
+                if not priv and os.path.isdir(p):
+                    uid = os.geteuid()
+                    if os.stat(p).st_uid != uid:
+                        p += ".%s" % (uid,)
+                        if os.path.isdir(p) and os.stat(p).st_uid != uid:
+                            raise Exception("filesystem has broken unix permissions")
                 try:
                     os.listdir(p)
                 except:
-                    os.mkdir(p)
+                    os.mkdir(p, 0o700)
 
-                if npath > 1:
+                if ram:
                     t = "Using %s/copyparty [%s] for config; filekeys/dirkeys will change on every restart. Consider setting XDG_CONFIG_HOME or giving the unix-user a ~/.config/"
                     errs.append(t % (pa, p))
                 elif mkdir:
@@ -226,13 +235,14 @@ def init_E(EE: EnvParams) -> None:
                 if errs:
                     warn(". ".join(errs))
 
-                return p  # type: ignore
+                return p, priv
             except Exception as ex:
-                if p and npath < 2:
+                if p:
                     t = "Unable to store config in %s [%s] due to %r"
                     errs.append(t % (pa, p, ex))
 
-        raise Exception("could not find a writable path for config")
+        t = "could not find a writable path for runtime state:\n> %s"
+        raise Exception(t % ("\n> ".join(errs)))
 
     E.mod = os.path.dirname(os.path.realpath(__file__))
     if E.mod.endswith("__init__"):
@@ -247,7 +257,7 @@ def init_E(EE: EnvParams) -> None:
         p = os.path.abspath(os.path.realpath(p))
         p = os.path.join(p, "copyparty")
         if not os.path.isdir(p):
-            os.mkdir(p)
+            os.mkdir(p, 0o700)
         os.listdir(p)
     except:
         p = ""
@@ -260,11 +270,11 @@ def init_E(EE: EnvParams) -> None:
     elif sys.platform == "darwin":
         E.cfg = os.path.expanduser("~/Library/Preferences/copyparty")
     else:
-        E.cfg = get_unixdir()
+        E.cfg, E.scfg = get_unixdir()
 
     E.cfg = E.cfg.replace("\\", "/")
     try:
-        os.makedirs(E.cfg)
+        bos.makedirs(E.cfg, bos.MKD_700)
     except:
         if not os.path.isdir(E.cfg):
             raise
@@ -1453,6 +1463,7 @@ def add_yolo(ap):
     ap2.add_argument("--no-fnugg", action="store_true", help="disable the smoketest for caching-related issues in the web-UI")
     ap2.add_argument("--getmod", action="store_true", help="permit ?move=[...] and ?delete as GET")
     ap2.add_argument("--wo-up-readme", action="store_true", help="allow users with write-only access to upload logues and readmes without adding the _wo_ filename prefix (volflag=wo_up_readme)")
+    ap2.add_argument("--unsafe-state", action="store_true", help="when one of the emergency fallback locations are used for runtime state ($TMPDIR, /tmp), certain features will be force-disabled for security reasons by default. This option overrides that safeguard and allows unsafe storage of secrets")
 
 
 def add_optouts(ap):

@@ -567,7 +567,7 @@ class HttpCli(object):
                 return False
             zsll = [x.split("=", 1) for x in zso.split(";") if "=" in x]
             cookies = {k.strip(): unescape_cookie(zs) for k, zs in zsll}
-            cookie_pw = cookies.get("cppws") or cookies.get("cppwd") or ""
+            cookie_pw = cookies.get("cppws" if self.is_https else "cppwd") or ""
             if "b" in cookies and "b" not in uparam:
                 uparam["b"] = cookies["b"]
             if len(cookies) > self.args.cookie_nmax:

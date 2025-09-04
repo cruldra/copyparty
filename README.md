@@ -2318,6 +2318,7 @@ buggy feature? rip it out  by setting any of the following environment variables
 | `PRTY_NO_SQLITE`     | disable all database-related functionality (file indexing, metadata indexing, most file deduplication logic) |
 | `PRTY_NO_TLS`        | disable native HTTPS support; if you still want to accept HTTPS connections then TLS must now be terminated by a reverse-proxy |
 | `PRTY_NO_TPOKE`      | disable systemd-tmpfilesd avoider |
+| `PRTY_UNSAFE_STATE`  | allow storing secrets into emergency-fallback locations |
 
 example: `PRTY_NO_IFADDR=1 python3 copyparty-sfx.py`
 

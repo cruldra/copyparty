@@ -1824,12 +1824,12 @@ var modal = (function () {
     };
 
     var onkey = function (e) {
-        var k = (e.code || e.key) + '',
+        var k = (e.key || e.code) + '',
             eok = ebi('modal-ok'),
             eng = ebi('modal-ng'),
             ae = document.activeElement;
 
-        if (k == 'Space' && ae && (ae === eok || ae === eng))
+        if ((k == 'Space' || k == 'Spacebar' || k == ' ') && ae && (ae === eok || ae === eng))
             k = 'Enter';
 
         if (k.endsWith('Enter')) {
