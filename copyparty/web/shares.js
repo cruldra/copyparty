@@ -1,3 +1,7 @@
+"use strict";
+
+var J_SHR = 1;
+
 var t = QSA('a[k]');
 for (var a = 0; a < t.length; a++)
     t[a].onclick = rm;
@@ -12,7 +16,7 @@ function rm() {
 }
 
 function bump() {
-    var k = this.closest('tr').getElementsByTagName('a')[2].getAttribute('k'),
+    var k = this.closest('tr').querySelector('a[k]').getAttribute('k'),
         u = SR + '/?skey=' + uricom_enc(k) + '&eshare=' + this.value,
         xhr = new XHR();
 
@@ -27,6 +31,11 @@ function cb() {
 
     location = '?shares';
 }
+
+ebi('xpnd').onclick = function (e) {
+	ev(e);
+	clmod(ebi('wrap'), 'terse', 't');
+};
 
 function qr(e) {
     ev(e);
@@ -54,7 +63,17 @@ function showqr(href) {
 
     var buf = [];
     for (var a = 0; a < tr.length; a++) {
-        tr[a].cells[0].getElementsByTagName('a')[0].onclick = qr;
+        var td = tr[a].cells[0],
+            sa = td.getElementsByTagName('a'),
+            h0 = sa[0].href,
+            h1 = sa[1].href;
+        sa[0].onclick = qr;
+        if (!h0.startsWith(h1)) {
+            var a2 = mknod('a', '', sa[1].innerHTML);
+            a2.href = h0.slice(0, -3);
+            sa[1].innerHTML = 'LAN';
+            td.appendChild(a2);
+        }
         for (var b = 7; b < 9; b++)
             buf.push(parseInt(tr[a].cells[b].innerHTML));
     }
@@ -76,3 +95,5 @@ function showqr(href) {
     for (var a = 0; a < aa; a++)
         btns[a].onclick = bump;
 })();
+
+J_SHR = 2;

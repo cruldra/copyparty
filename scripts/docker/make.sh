@@ -1,5 +1,7 @@
 #!/bin/bash
 set -e
+self=$(cd -- "$(dirname "$BASH_SOURCE")"; pwd -P)
+cd "$self"
 
 [ $(id -u) -eq 0 ] && {
     echo dont root
@@ -17,6 +19,13 @@ ngs=(
     iv-{ppc64le,s390x}
     dj-{ppc64le,s390x,arm}
 )
+
+err=
+for x in awk jq podman python3 tar wget ; do
+    command -v $x >/dev/null && continue
+    err=1; echo ERROR: missing dependency: $x
+done
+[ $err ] && exit 1
 
 for v in "$@"; do
     [ "$v" = clean  ] && clean=1
@@ -41,7 +50,7 @@ done
 
 filt=
 [ $clean  ] && filt='/<none>/{print$$3}'
-[ $hclean ] && filt='/localhost\/copyparty-|^<none>.*localhost\/alpine-/{print$3}'
+[ $hclean ] && filt='/localhost\/(copyparty|alpine)-/{print$3}'
 [ $purge  ] && filt='NR>1{print$3}'
 [ $filt ] && {
     [ $purge ] && {
@@ -56,7 +65,7 @@ filt=
     for a in $sarchs; do  # arm/v6
         podman pull --arch=$a alpine:latest
     done
-    
+
     podman images --format "{{.ID}} {{.History}}" |
     awk '/library\/alpine/{print$1}' |
     while read id; do
@@ -71,6 +80,20 @@ filt=
 }
 
 [ $img ] && {
+    [ -e base/test-aac/lc.m4a ] || (
+        echo building aac smoketest
+        mkdir -p base/test-aac
+        cd base/test-aac
+        ffmpeg -nostdin -y -f lavfi -i sine -ac 2 -t 1 a.wav &&
+        fdkaac -m 3 -o lc.m4a a.wav &&
+        fdkaac -m 2 -p 5 -o he.m4a a.wav &&
+        fdkaac -m 1 -p 29 -o he2.m4a a.wav &&
+        fdkaac -m 3 -p 23 -o ld.m4a a.wav &&
+        fdkaac -m 3 -p 39 -o eld.m4a a.wav ||
+        echo "nevermind, failed to build test files, cannot verify aac decoding"
+        rm -f a.wav
+    )
+
     fp=../../dist/copyparty-sfx.py
     [ -e $fp ] || {
         echo downloading copyparty-sfx.py ...
@@ -78,13 +101,22 @@ filt=
         wget https://github.com/9001/copyparty/releases/latest/download/copyparty-sfx.py -O $fp
     }
 
+    # enable arm32 crossbuild from aarch64 (macbook or whatever)
+    [ $(uname -m) = aarch64 ] && [ ! -e /proc/sys/fs/binfmt_misc/qemu-arm ] &&
+        echo ":qemu-arm:M:0:\x7f\x45\x4c\x46\x01\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x02\x00\x28\x00:\xff\xff\xff\xff\xff\xff\xff\x00\xff\xff\xff\xff\xff\xff\xff\xff\xfe\xff\xff\xff:/usr/bin/qemu-arm-static:F" |
+        sudo tee >/dev/null /proc/sys/fs/binfmt_misc/register
+
     # kill abandoned builders
     ps aux | awk '/bin\/qemu-[^-]+-static/{print$2}' | xargs -r kill -9
 
     # grab deps
     rm -rf i err
     mkdir i
-    tar -cC../.. dist/copyparty-sfx.py bin/mtag | tar -xvCi
+    tar -cC "$self/base" whl test-aac \
+        -C "$self/base/b" packages \
+        -C "$self/../.."  bin/mtag \
+        -C dist copyparty-sfx.py \
+        | tar -xvCi
 
     for i in $imgs; do
         podman rm copyparty-$i || true  # old manifest
@@ -102,12 +134,18 @@ filt=
             # arm takes forever so make it top priority
             [ ${a::3} == arm ] && nice= || nice=-n20
 
+            # not sure if this is necessary or if inherit-annotations=false was enough, but won't hurt
+            readarray -t annot < <(awk <Dockerfile.$i '/org.opencontainers.image/{sub(/[^\.]+/,"");sub(/[" \\]+$/,"");sub(/"/,"");print"--annotation";print"org"$0}')
+            annot+=( --annotation "org.opencontainers.image.created=$( date -u +%Y-%m-%dT%H:%M:%SZ )" )
+
             # --pull=never does nothing at all btw
             (set -x
             nice $nice podman build \
                 --squash \
                 --pull=never \
                 --from localhost/alpine-$a \
+                --inherit-annotations=false \
+                "${annot[@]}" \
                 -t copyparty-$i-$a$suf \
                 -f Dockerfile.$i . ||
                     (echo $? $i-$a >> err; printf '%096d\n' $(seq 1 42))

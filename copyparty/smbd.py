@@ -89,7 +89,7 @@ class SMB(object):
         smbserver.isInFileJail = self._is_in_file_jail
         self._disarm()
 
-        ip = next((x for x in self.args.i if ":" not in x), None)
+        ip = next((x for x in self.args.smb_i if ":" not in x), None)
         if not ip:
             self.log("smb", "IPv6 not supported for SMB; listening on 0.0.0.0", 3)
             ip = "0.0.0.0"
@@ -246,24 +246,29 @@ class SMB(object):
 
             ap = absreal(ap)
             xbu = vfs.flags.get("xbu")
-            if xbu and not runhook(
-                self.nlog,
-                None,
-                self.hub.up2k,
-                "xbu.smb",
-                xbu,
-                ap,
-                vpath,
-                "",
-                "",
-                "",
-                0,
-                0,
-                "1.7.6.2",
-                time.time(),
-                "",
-            ):
-                yeet("blocked by xbu server config: %r" % (vpath,))
+            if xbu:
+                hr = runhook(
+                    self.nlog,
+                    None,
+                    self.hub.up2k,
+                    "xbu.smb",
+                    xbu,
+                    ap,
+                    vpath,
+                    "",
+                    "",
+                    "",
+                    0,
+                    0,
+                    "1.7.6.2",
+                    time.time(),
+                    None,
+                )
+                t = hr.get("rejectmsg") or ""
+                if t or hr.get("rc") != 0:
+                    if not t:
+                        t = "blocked by xbu server config: %r" % (vpath,)
+                    yeet(t)
 
         ret = bos.open(ap, flags, *a, mode=chmod, **ka)
         if wr:
@@ -373,7 +378,7 @@ class SMB(object):
             t = "blocked utime (no-write-acc %s): /%s @%s"
             yeet(t % (vfs.axs.uwrite, vpath, uname))
 
-        return bos.utime(ap, times)
+        bos.utime_c(info, ap, int(times[1]), False)
 
     def _p_exists(self, vpath: str) -> bool:
         # ap = "?"

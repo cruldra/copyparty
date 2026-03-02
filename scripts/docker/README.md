@@ -33,10 +33,11 @@ i'm not very familiar with containers, so let me know if this section could be b
 
 the container has the same default config as the sfx and the pypi module, meaning it will listen on port 3923 and share the "current folder" (`/w` inside the container) as read-write for anyone
 
-the recommended way to configure copyparty inside a container is to mount a folder which has one or more [config files](https://github.com/9001/copyparty/blob/hovudstraum/docs/example.conf) inside; `-v /your/config/folder:/cfg`
+the recommended way to configure copyparty inside a container is to mount a folder which has one or more [config files](https://github.com/9001/copyparty/blob/hovudstraum/docs/examples/docker/basic-docker-compose/copyparty.conf) inside; `-v /your/config/folder:/cfg`
 
 * but you can also provide arguments to the docker command if you prefer that
 * config files must be named `something.conf` to get picked up
+* there are [more extensive config examples](https://github.com/9001/copyparty/blob/hovudstraum/docs/example.conf) but those are not made for docker so the paths are wrong (`/home/ed/Music` should be `/w/something` and so on)
 
 also see [docker-specific recommendations](#docker-specific-recommendations)
 
@@ -119,6 +120,7 @@ add the following three config entries into the `[global]` section of your `copy
 * `ftp: 3921` to enable the service, listening for connections on port 3921
 
 * `ftp-nat: 127.0.0.1` but replace `127.0.0.1` with the actual external IP of your server; the clients will only be able to connect to this IP, even if the server has multiple IPs
+  * do not add `ftp-nat` if you are running the container with host networking
 
 * `ftp-pr: 12000-12099` to restrict the [passive-mode](http://slacksite.com/other/ftp.html#passive) port selection range; this allows up to 100 simultaneous file transfers
 
@@ -128,3 +130,8 @@ then finally update your docker config so that the port-range you specified (120
 # build the images yourself
 
 basically `./make.sh hclean pull img push` but see [devnotes.md](./devnotes.md)
+
+
+## adding new packages to the image
+
+in case you wish to make a small modification to the official image, for example [add a python package you need](https://github.com/9001/copyparty/issues/479#issuecomment-3152026483), then you don't *really* need to build the whole image from scratch -- see [modifying an image](./devnotes.md#modifying-an-image) in devnotes

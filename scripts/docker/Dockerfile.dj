@@ -12,20 +12,21 @@ COPY    i/bin/mtag/audio-bpm.py /mtag/
 COPY    i/bin/mtag/audio-key.py /mtag/
 RUN     apk add -U !pyc \
             tzdata wget mimalloc2 mimalloc2-insecure \
-            py3-jinja2 py3-argon2-cffi py3-pyzmq py3-openssl py3-pillow \
+            py3-jinja2 py3-argon2-cffi py3-pyzmq \
+            py3-openssl py3-paramiko py3-pillow \
             py3-pip py3-cffi \
-            ffmpeg \
             py3-magic \
-            vips-jxl vips-heif vips-poppler vips-magick \
+            vips-jxl vips-poppler vips-magick \
             py3-numpy fftw libsndfile \
-            vamp-sdk vamp-sdk-libs \
-            libraw py3-numpy cython \
+            vamp-sdk vamp-sdk-libs keyfinder-cli \
+            libraw py3-numpy \
         && apk add -t .bd \
             bash wget gcc g++ make cmake patchelf \
-            python3-dev ffmpeg-dev fftw-dev libsndfile-dev \
+            ffmpeg ffmpeg-dev \
+            python3-dev fftw-dev libsndfile-dev \
             py3-wheel py3-numpy-dev libffi-dev \
             vamp-sdk-dev \
-            libraw-dev py3-numpy-dev \
+            libraw-dev py3-numpy-dev cython \
         && rm -f /usr/lib/python3*/EXTERNALLY-MANAGED \
         && python3 -m pip install pyvips \
         && python3 -m pip install "$(wget -O- https://api.github.com/repos/letmaik/rawpy/releases/latest | awk -F\" '$2=="tarball_url"{print$4}')" \
@@ -34,10 +35,9 @@ RUN     apk add -U !pyc \
         && chmod 777 /root \
         && ln -s /root/vamp /root/.local /
 
-COPY    i/dist/copyparty-sfx.py innvikler.sh ./
-ADD     base ./base
+COPY    i innvikler.sh ./
 RUN     ash innvikler.sh dj
 
 WORKDIR /state
 EXPOSE  3923
-ENTRYPOINT ["python3", "-m", "copyparty", "-c", "/z/initcfg"]
+ENTRYPOINT ["/bin/ash", "/z/cpp.sh", "-c", "/z/initcfg"]

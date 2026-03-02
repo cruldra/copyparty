@@ -9,6 +9,7 @@ from .__init__ import CORES
 from .authsrv import VFS, AuthSrv
 from .bos import bos
 from .th_cli import ThumbCli
+from .th_srv import TH_CH
 from .util import UTC, vjoin, vol_san
 
 if True:  # pylint: disable=using-constant-test
@@ -95,7 +96,7 @@ def enthumb(
     if not thp:
         raise Exception()
 
-    ext = "jpg" if fmt == "j" else "webp" if fmt == "w" else fmt
+    ext = fmt if fmt == "wav" else TH_CH.get(fmt[:1], fmt)
     sz = bos.path.getsize(thp)
     st: os.stat_result = f["st"]
     ts = st.st_mtime

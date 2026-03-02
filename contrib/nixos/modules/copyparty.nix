@@ -48,10 +48,13 @@ let
 
   accountsWithPlaceholders = mapAttrs (name: attrs: passwordPlaceholder name);
 
+  volumesWithoutVariables = filterAttrs (k: v: !(hasInfix "\${" v.path)) cfg.volumes;
+
   configStr = ''
     ${mkSection "global" cfg.settings}
     ${cfg.globalExtraConfig}
     ${mkSection "accounts" (accountsWithPlaceholders cfg.accounts)}
+    ${mkSection "groups" cfg.groups}
     ${concatStringsSep "\n" (mapAttrsToList mkVolume cfg.volumes)}
   '';
 
@@ -66,11 +69,8 @@ in
   options.services.copyparty = {
     enable = mkEnableOption "web-based file manager";
 
-    package = mkOption {
-      type = types.package;
-      default = pkgs.copyparty;
-      defaultText = "pkgs.copyparty";
-      description = ''
+    package = mkPackageOption pkgs "copyparty" {
+      extraDescription = ''
         Package of the application to run, exposed for overriding purposes.
       '';
     };
@@ -79,7 +79,7 @@ in
       type = types.bool;
       default = true;
       description = ''
-        Make a shell script wrapper called 'copyparty-hash' with all options set here,
+        Make a shell script wrapper called {command}`copyparty-hash` with all options set here,
         that launches the hashing cli.
       '';
     };
@@ -114,9 +114,9 @@ in
       type = types.attrs;
       description = ''
         Global settings to apply.
-        Directly maps to values in the [global] section of the copyparty config.
+        Directly maps to values in the `[global]` section of the copyparty config.
         Cannot set "c" or "hist", those are set by this module.
-        See `${getExe cfg.package} --help` for more details.
+        See {command}`copyparty --help` for more details.
       '';
       default = {
         i = "127.0.0.1";
@@ -135,7 +135,7 @@ in
     globalExtraConfig = mkOption {
       type = types.str;
       default = "";
-      description = "Appended to the end of the [global] section verbatim. This is useful for flags which are used in a repeating manner (e.g. ipu: 255.255.255.1=user) which can't be repeated in the settings = {} attribute set.";
+      description = "Appended to the end of the `[global]` section verbatim. This is useful for flags which are used in a repeating manner (e.g. `ipu: 255.255.255.1=user`) which can't be repeated in the settings = {} attribute set.";
     };
 
     accounts = mkOption {
@@ -167,6 +167,19 @@ in
       '';
     };
 
+    groups = mkOption {
+      type = types.attrsOf (types.listOf types.str);
+      description = ''
+        A set of copyparty groups to create and the users that should be part of each group.
+      '';
+      default = { };
+      example = literalExpression ''
+        {
+          group_name = [ "user1" "user2" ];
+        };
+      '';
+    };
+
     volumes = mkOption {
       type = types.attrsOf (
         types.submodule (
@@ -185,21 +198,21 @@ in
                   Attribute list of permissions and the users to apply them to.
 
                   The key must be a string containing any combination of allowed permission:
-                    "r" (read):   list folder contents, download files
-                    "w" (write):  upload files; need "r" to see the uploads
-                    "m" (move):   move files and folders; need "w" at destination
-                    "d" (delete): permanently delete files and folders
-                    "g" (get):    download files, but cannot see folder contents
-                    "G" (upget):  "get", but can see filekeys of their own uploads
-                    "h" (html):   "get", but folders return their index.html
-                    "a" (admin):  can see uploader IPs, config-reload
+                  * "r" (read):   list folder contents, download files
+                  * "w" (write):  upload files; need "r" to see the uploads
+                  * "m" (move):   move files and folders; need "w" at destination
+                  * "d" (delete): permanently delete files and folders
+                  * "g" (get):    download files, but cannot see folder contents
+                  * "G" (upget):  "get", but can see filekeys of their own uploads
+                  * "h" (html):   "get", but folders return their index.html
+                  * "a" (admin):  can see uploader IPs, config-reload
 
                   For example: "rwmd"
 
                   The value must be one of:
-                    an account name, defined in `accounts`
-                    a list of account names
-                    "*", which means "any account"
+                  * an account name, defined in `accounts`
+                  * a list of account names
+                  * "*", which means "any account"
                 '';
                 example = literalExpression ''
                   {
@@ -214,7 +227,7 @@ in
                 type = types.attrs;
                 description = ''
                   Attribute list of volume flags to apply.
-                  See `${getExe cfg.package} --help-flags` for more details.
+                  See {command}`copyparty --help-flags` for more details.
                 '';
                 example = literalExpression ''
                   {
@@ -311,7 +324,7 @@ in
           BindPaths =
             (if cfg.settings ? hist then [ cfg.settings.hist ] else [ ])
             ++ [ externalStateDir ]
-            ++ (mapAttrsToList (k: v: v.path) cfg.volumes);
+            ++ (mapAttrsToList (k: v: v.path) volumesWithoutVariables);
           # ProtectSystem = "strict";
           # Note that unlike what 'ro' implies,
           # this actually makes it impossible to read anything in the root FS,
@@ -350,18 +363,32 @@ in
               #: in front of things means it wont change it if the directory already exists.
               group = ":${cfg.group}";
               user = ":${cfg.user}";
-              mode = ":755";
+              mode = ":${
+                # Use volume permissions if set
+                if (value.flags ? chmod_d) then
+                  value.flags.chmod_d
+                # Else, use global permission if set
+                else if (cfg.settings ? chmod-d) then
+                  cfg.settings.chmod-d
+                # Else, use the default permission
+                else
+                  "755"
+              }";
             };
           }
-        ) cfg.volumes
+        ) volumesWithoutVariables
       );
 
-      users.groups.copyparty = lib.mkIf (cfg.user == "copyparty" && cfg.group == "copyparty") { };
-      users.users.copyparty = lib.mkIf (cfg.user == "copyparty" && cfg.group == "copyparty") {
-        description = "Service user for copyparty";
-        group = "copyparty";
-        home = externalStateDir;
-        isSystemUser = true;
+      users.groups = lib.mkIf (cfg.group == "copyparty") {
+        copyparty = { };
+      };
+      users.users = lib.mkIf (cfg.user == "copyparty") {
+        copyparty = {
+          description = "Service user for copyparty";
+          group = cfg.group;
+          home = externalStateDir;
+          isSystemUser = true;
+        };
       };
       environment.systemPackages = lib.mkIf cfg.mkHashWrapper [
         (pkgs.writeShellScriptBin "copyparty-hash" ''
@@ -380,4 +407,3 @@ in
     }
   );
 }
-

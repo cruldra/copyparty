@@ -30,53 +30,51 @@ after editing tl.js, reload your webbrowser by pressing ctrl-shift-r
 
 
 def generate_javascript(lang3, native_name, tl_browser):
-    note = "// NOTE: please use tabs for indenting, not spaces :-)"
-    if lang3 == "eng":
-        note += """\n
-// NOTE: since you are using the tl.js straight from the repo, you'll
-//   need to find/replace all "eng" with your own three-letter name"""
+    note1 = ""
+    note2 = ""
+    if lang3 == "hmn":
+        note1 = ';\n// please adjust this (and the "Ls.hmn" further down)'
+        note2 = """
+// the three-letter language-code "hmn" and language-name "Hymmnos"
+// is used as an example; please replace these with your language
+//"""
 
     return f""""use strict";
 
-{note}
 
-// the three-letter name of the language you're translating to
+// the three-letter name of the language you're translating to{note1}
 var my_lang = "{lang3}";
 
-// and because we don't know these yet...
-var SR='', wah='';
 
-// this function is automatically called when the page is loaded:
+////////////////////////////////////////////////////////////////////////
+// please ignore the next 5 lines:
+var Ls={{}}, SR='', wah='';
 function langmod() {{
-
-	// which page is the javascript currently running on?
-	// look for some well-known elements to figure it out:
-
-	if (QS("h1#cc") && QS("a#k")) {{
-		// we are running in the control-panel
-		Ls[my_lang] = tl_cpanel[my_lang];
-	}}
-	else if (ebi("op_cfg")) {{
-		// we are running in the filebrowser
-		Ls[my_lang] = tl_browser[my_lang];
-
-		// inform the settings tab that a new lang is available
-		LANGS.push(my_lang);
-	}}
+	if (window.LANGN)
+		LANGN.push([my_lang, Ls[my_lang].tt]);
 }}
 
 
 ////////////////////////////////////////////////////////////////////////
+// alright,
 // below this point is where the actual translation happens;
 // here is the pairs of "text-identifier": "text-to-translate"
-
-
-////////////////////////////////////////////////////////////////////////
-// translation of splash.js (the control-panel);
+//{note2}
 // you do not need to translate the TLNotes, those are just for you :-)
+//
+// note: if a line starts with ` then that is to enable
+// turning `foo` into <code>foo</code> (only possible for tooltips)
+//
+// when you are happy with this translation and want to submit it,
+// copy the text below into a new file in the translations folder;
+// https://github.com/9001/copyparty/tree/hovudstraum/copyparty/web/tl
 
-var tl_cpanel = {{
-	"{lang3}": {{
+
+Ls.{lang3} = {{
+	"tt": "{native_name}",
+{tl_browser}
+
+	"splash": {{
 		"a1": "refresh",
 		"b1": "howdy stranger &nbsp; <small>(you're not logged in)</small>",
 		"c1": "logout",
@@ -92,6 +90,11 @@ var tl_cpanel = {{
 		"j1": "enabling k304 will disconnect your client on every HTTP 304, which can prevent some buggy proxies from getting stuck (suddenly not loading pages), <em>but</em> it will also make things slower in general",
 		"k1": "reset client settings",
 		"l1": "login for more:",
+		"ls3": "login",
+		"lu4": "username",
+		"lp4": "password",
+		"lo3": "logout “{{0}}” everywhere",
+		"lo2": "ends the session on all browsers",
 		"m1": "welcome back,",  // TLNote: "welcome back, USERNAME"
 		"n1": "404 not found &nbsp;┐( ´ -`)┌",
 		"o1": 'or maybe you don\\'t have access -- try a password or <a href="' + SR + '/?h">go home</a>',
@@ -110,26 +113,17 @@ var tl_cpanel = {{
 		"ta1": "fill in your new password first",
 		"ta2": "repeat to confirm new password:",
 		"ta3": "found a typo; please try again",
+		"nop": "ERROR: Password cannot be blank",
+		"nou": "ERROR: Username and/or password cannot be blank",
 		"aa1": "incoming files:",
 		"ab1": "disable no304",
 		"ac1": "enable no304",
 		"ad1": "enabling no304 will disable all caching; try this if k304 wasn't enough. This will waste a huge amount of network traffic!",
 		"ae1": "active downloads:",
-        "af1": "show recent uploads",
-	}},
+		"af1": "show recent uploads",
+		"ag1": "view idp cache",  // TLNote: is a link to a page where IdP users can be managed
+	}}
 }};
-
-
-////////////////////////////////////////////////////////////////////////
-// translation of browser.js (the filebrowser):
-
-var tl_browser = {{
-	"{lang3}": {{
-		"tt": "{native_name}",
-
-		{tl_browser}
-}};
-
 """
 
 
@@ -158,7 +152,8 @@ def main():
         browserjs = f.read().decode("utf-8")
 
     _, browserjs = browserjs.split('\n\t\t"tt": "English",\n', 1)
-    browserjs, _ = browserjs.split('\n\t"nor": {', 1)
+    browserjs, _ = browserjs.split("\n}", 1)
+    browserjs = browserjs.replace("\n\t", "\n")
 
     try:
         lang3 = sys.argv[1]

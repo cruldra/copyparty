@@ -1,12 +1,12 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" id="ht_rup">
 
 <head>
 	<meta charset="utf-8">
 	<title>{{ s_doctitle }}</title>
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
 	<meta name="viewport" content="width=device-width, initial-scale=0.8">
-    <meta name="robots" content="noindex, nofollow">
+	<meta name="robots" content="noindex, nofollow">
 	<meta name="theme-color" content="#{{ tcolor }}">
 	<link rel="stylesheet" media="screen" href="{{ r }}/.cpr/rups.css?_={{ ts }}">
 	<link rel="stylesheet" media="screen" href="{{ r }}/.cpr/ui.css?_={{ ts }}">
@@ -39,6 +39,11 @@ document.documentElement.className = (STG && STG.cpp_thm) || "{{ this.args.theme
 {%- if js %}
 <script src="{{ js }}_={{ ts }}"></script>
 {%- endif %}
+<script>
+	Date.now();function jsldp(a,b){2!=window[a]&&alert("FATAL ERROR: cannot load "+b+".js due to unreliable network or broken reverse-proxy; try CTRL-SHIFT-R")}
+	jsldp("J_UTL","util");
+	jsldp("J_RUP","rups");
+</script>
 </body>
 </html>
 

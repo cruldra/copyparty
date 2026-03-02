@@ -44,6 +44,8 @@ ANYWIN = WINDOWS or sys.platform in ["msys", "cygwin"]
 
 MACOS = platform.system() == "Darwin"
 
+GRAAL = platform.python_implementation() == "GraalVM"
+
 EXE = bool(getattr(sys, "frozen", False))
 
 try:
@@ -55,7 +57,7 @@ except:
 zs = """
 web/a/partyfuse.py
 web/a/u2c.py
-web/a/webdav-cfg.bat
+web/a/webdav-cfg.txt
 web/baguettebox.js
 web/browser.css
 web/browser.html
@@ -86,8 +88,8 @@ web/md2.js
 web/mde.css
 web/mde.html
 web/mde.js
-web/msg.css
 web/msg.html
+web/opds.xml
 web/rups.css
 web/rups.html
 web/rups.js
@@ -99,18 +101,46 @@ web/splash.html
 web/splash.js
 web/svcs.html
 web/svcs.js
+web/tl/chi.js
+web/tl/cze.js
+web/tl/deu.js
+web/tl/epo.js
+web/tl/fin.js
+web/tl/fra.js
+web/tl/grc.js
+web/tl/hun.js
+web/tl/ita.js
+web/tl/jpn.js
+web/tl/kor.js
+web/tl/nld.js
+web/tl/nno.js
+web/tl/nor.js
+web/tl/pol.js
+web/tl/por.js
+web/tl/rus.js
+web/tl/spa.js
+web/tl/swe.js
+web/tl/tur.js
+web/tl/ukr.js
+web/tl/vie.js
 web/ui.css
 web/up2k.js
 web/util.js
 web/w.hash.js
 """
 RES = set(zs.strip().split("\n"))
+RESM = {
+    "web/a/partyfuse.txt": "web/a/partyfuse.py",
+    "web/a/u2c.txt": "web/a/u2c.py",
+    "web/a/webdav-cfg.bat": "web/a/webdav-cfg.txt",
+}
 
 
 class EnvParams(object):
     def __init__(self) -> None:
         self.t0 = time.time()
         self.mod = ""
+        self.mod_ = ""
         self.cfg = ""
         self.scfg = True
 

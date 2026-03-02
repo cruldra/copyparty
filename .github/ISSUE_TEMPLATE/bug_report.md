@@ -7,10 +7,11 @@ assignees: '9001'
 
 ---
 
-NOTE:
+<!-- NOTE:
 **please use english, or include an english translation.** aside from that,  
-all of the below are optional, consider them as inspiration, delete and rewrite at will, thx md
-
+include all of the information that might possibly be necessary to help diagnose your issue,
+especially things like the server config and server logs; that said,
+any parts below which are obviously and definitely irrelevant can be skipped -->
 
 ### Describe the bug
 a description of what the bug is
@@ -44,6 +45,12 @@ if the issue is possibly on the client-side, then mention some of the following:
 * the device type and model: 
 * OS version: 
 * browser version: 
+
+### The rest of the stack
+if you are connecting directly to copyparty then that's cool, otherwise please mention everything else between copyparty and the browser (reverseproxy, tunnels, etc.)
+
+### Server log
+if the issue might be server-related, include everything that appears in the copyparty log during startup, and also anything else you think might be relevant
 
 ### Additional context
 any other context about the problem here

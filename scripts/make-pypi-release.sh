@@ -10,6 +10,7 @@ gtar=$(command -v gtar || command -v gnutar) || true
 	sed()  { gsed  "$@"; }
 	find() { gfind "$@"; }
 	sort() { gsort "$@"; }
+	nproc() { gnproc; }
 	command -v grealpath >/dev/null &&
 		realpath() { grealpath "$@"; }
 }
@@ -149,7 +150,8 @@ done
 
 rm -rf contrib
 [ $fast ] && sed -ri s/573/10/ copyparty/web/Makefile
-(cd copyparty/web && make -j$(nproc) && rm Makefile)
+(cd copyparty/web && make -j$(nproc) && rm Makefile*)
+rm -f copyparty/web/deps/README.md
 
 # build
 python3 -m build
